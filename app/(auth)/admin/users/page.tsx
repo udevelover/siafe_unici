@@ -13,6 +13,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Pencil, Trash2 } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 
 interface Usuario {
   id: string;
@@ -30,6 +31,8 @@ const UserManagementView: React.FC = () => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("Todos los roles");
+
+  const [mensajeReset, setMensajeReset] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUsuarios = async () => {
@@ -50,7 +53,7 @@ const UserManagementView: React.FC = () => {
       const usuariosTransformados = (data || []).map((usuario: any) => ({
         ...usuario,
         rol: Array.isArray(usuario.rol) ? usuario.rol[0] || null : usuario.rol,
-        seleccionado: false, 
+        seleccionado: false,
       }));
 
       setUsuarios(usuariosTransformados);
@@ -79,6 +82,24 @@ const UserManagementView: React.FC = () => {
     setUsuarios((prev) => prev.filter((u) => u.id !== id));
   };
 
+  // ----------------------------------------
+  // 🔥 RESTABLECER CONTRASEÑA
+  // ----------------------------------------
+  const handleEnviarReset = async (email: string) => {
+    setMensajeReset(null);
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: "https://siafe.herramientasunici.com/reset-password",
+    });
+
+    if (error) {
+      setMensajeReset("Error al enviar correo: " + error.message);
+      return;
+    }
+
+    setMensajeReset(`Correo enviado a ${email}`);
+  };
+
   const filteredUsers = usuarios.filter((user) => {
     const roleName = user.rol?.rol || "Sin rol";
     return (
@@ -93,6 +114,12 @@ const UserManagementView: React.FC = () => {
       <h1 className="text-3xl font-light text-center text-black-800 mb-6">
         Gestión de usuarios
       </h1>
+
+      {mensajeReset && (
+        <div className="mb-4 p-3 text-center bg-blue-100 text-blue-700 rounded">
+          {mensajeReset}
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
         <Input
@@ -139,6 +166,7 @@ const UserManagementView: React.FC = () => {
               <th className="p-3 text-center whitespace-nowrap">Acciones</th>
             </tr>
           </thead>
+
           <tbody>
             {filteredUsers.length === 0 ? (
               <tr>
@@ -156,13 +184,16 @@ const UserManagementView: React.FC = () => {
                       onChange={() => handleSeleccionar(user.id)}
                     />
                   </td>
+
                   <td className="p-3 text-center whitespace-nowrap">{user.nombre}</td>
                   <td className="p-3 text-center whitespace-nowrap">{user.email}</td>
+
                   <td className="p-3 text-center whitespace-nowrap">
                     <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm inline-block">
                       {user.rol?.rol ?? "Sin rol"}
                     </span>
                   </td>
+
                   <td className="p-3 text-center flex justify-center gap-2">
                     <Button
                       variant="outline"
@@ -173,6 +204,17 @@ const UserManagementView: React.FC = () => {
                     >
                       <Pencil size={20} />
                     </Button>
+
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="text-blue-600"
+                      onClick={() => handleEnviarReset(user.email)}
+                      title="Restablecer contraseña"
+                    >
+                      <RotateCcw size={20} />
+                    </Button>
+
                     <Button
                       variant="outline"
                       size="icon"
