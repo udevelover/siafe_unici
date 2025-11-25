@@ -9,8 +9,7 @@ export default function ResetPasswordPage() {
   const params = useSearchParams();
   const router = useRouter();
 
-  // Supabase envía `access_token` (y a veces otros params)
-const accessToken = params?.get("access_token") ?? null;
+  const accessToken = params?.get("access_token") ?? null;
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -18,7 +17,6 @@ const accessToken = params?.get("access_token") ?? null;
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    // Opcional: mostrar advertencia si no hay token
     if (!accessToken) {
       setMessage("Token no encontrado. Revisa el link que te llegó por correo.");
     }
