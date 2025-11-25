@@ -12,35 +12,53 @@ export default function ResetPasswordPage() {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [tokenLoaded, setTokenLoaded] = useState(false);
+  const [tokenReady, setTokenReady] = useState(false);
 
   useEffect(() => {
-    const hash = window.location.hash; // <-- AQUÍ ESTÁ EL TOKEN
-    const params = new URLSearchParams(hash.replace("#", "?"));
+    async function processToken() {
+      // Leer el HASH donde viene el access_token
+      const hash = window.location.hash;
+      const params = new URLSearchParams(hash.replace("#", "?"));
 
-    const access_token = params.get("access_token");
-    const type = params.get("type");
+      const access_token = params.get("access_token");
+      const type = params.get("type");
 
-    if (!access_token || type !== "recovery") {
-      setMessage("Token inválido o expirado.");
-      return;
+      if (!access_token || type !== "recovery") {
+        setMessage("Token inválido o expirado.");
+        return;
+      }
+
+      // Crear sesión temporal
+      const { error } = await supabase.auth.setSession({
+        access_token,
+        refresh_token: "",
+      });
+
+      if (error) {
+        setMessage("Error al validar token.");
+        return;
+      }
+
+      // Validación final: obtener sesión
+      const { data } = await supabase.auth.getSession();
+
+      if (!data.session) {
+        setMessage("No se pudo iniciar sesión temporalmente.");
+        return;
+      }
+
+      setTokenReady(true);
     }
 
-    // Crear sesión temporal con el token
-    supabase.auth.setSession({
-      access_token,
-      refresh_token: "",
-    });
-
-    setTokenLoaded(true);
+    processToken();
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMessage(null);
 
-    if (!tokenLoaded) {
-      setMessage("No se pudo validar el token.");
+    if (!tokenReady) {
+      setMessage("El token no está listo o no es válido.");
       return;
     }
 
@@ -76,36 +94,51 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen p-4">
-      <form onSubmit={handleSubmit} className="w-full max-w-md p-6 border rounded shadow">
-        <h2 className="text-xl font-semibold mb-4">Restablecer contraseña</h2>
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-md p-6 border rounded shadow"
+      >
+        <h2 className="text-xl font-semibold mb-4">
+          Restablecer contraseña
+        </h2>
 
-        {message && <div className="mb-3 text-sm text-red-600">{message}</div>}
+        {message && (
+          <div className="mb-3 text-sm text-red-600">
+            {message}
+          </div>
+        )}
 
-        <label className="block mb-2">Nueva contraseña</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 border rounded mb-3"
-          disabled={loading}
-        />
+        {!tokenReady ? (
+          <p className="text-gray-700">Validando token...</p>
+        ) : (
+          <>
+            <label className="block mb-2">Nueva contraseña</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-2 border rounded mb-3"
+              disabled={loading}
+            />
 
-        <label className="block mb-2">Confirmar contraseña</label>
-        <input
-          type="password"
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-          className="w-full p-2 border rounded mb-4"
-          disabled={loading}
-        />
+            <label className="block mb-2">Confirmar contraseña</label>
+            <input
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              className="w-full p-2 border rounded mb-4"
+              disabled={loading}
+            />
 
-        <button
-          type="submit"
-          className="w-full py-2 bg-blue-600 text-white rounded disabled:opacity-60"
-          disabled={loading}
-        >
-          {loading ? "Guardando..." : "Guardar nueva contraseña"}
-        </button>
+            <button
+              type="submit"
+              className="w-full py-2 bg-blue-600 text-white rounded disabled:opacity-60"
+              disabled={loading}
+            >
+              {loading ? "Guardando..." : "Guardar nueva contraseña"}
+            </button>
+          </>
+        )}
       </form>
     </div>
   );
