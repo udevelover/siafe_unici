@@ -31,7 +31,7 @@ const EditarDepartamento: React.FC = () => {
       if (departamentoError) {
         console.error("Error al cargar el departamento:", departamentoError.message);
         alert("Error al cargar los datos del departamento.");
-        router.push("/departamentos");
+        router.push("/areas");
         return;
       }
 
