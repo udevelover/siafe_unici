@@ -1,33 +1,46 @@
 "use client";
 
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 export default function ResetPasswordPage() {
   const supabase = createClientComponentClient();
-  const params = useSearchParams();
   const router = useRouter();
-
-  const accessToken = params?.get("access_token") ?? null;
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [tokenLoaded, setTokenLoaded] = useState(false);
 
   useEffect(() => {
-    if (!accessToken) {
-      setMessage("Token no encontrado. Revisa el link que te llegó por correo.");
+    const hash = window.location.hash; // <-- AQUÍ ESTÁ EL TOKEN
+    const params = new URLSearchParams(hash.replace("#", "?"));
+
+    const access_token = params.get("access_token");
+    const type = params.get("type");
+
+    if (!access_token || type !== "recovery") {
+      setMessage("Token inválido o expirado.");
+      return;
     }
-  }, [accessToken]);
+
+    // Crear sesión temporal con el token
+    supabase.auth.setSession({
+      access_token,
+      refresh_token: "",
+    });
+
+    setTokenLoaded(true);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMessage(null);
 
-    if (!accessToken) {
-      setMessage("Token inválido o expirado.");
+    if (!tokenLoaded) {
+      setMessage("No se pudo validar el token.");
       return;
     }
 
@@ -43,22 +56,18 @@ export default function ResetPasswordPage() {
 
     try {
       setLoading(true);
-      // Con createClientComponentClient en una página client, Supabase detecta el token en la URL
-      const { error } = await supabase.auth.updateUser({
-        password,
-      });
+
+      const { error } = await supabase.auth.updateUser({ password });
 
       setLoading(false);
 
       if (error) {
-        console.error("Error al actualizar contraseña:", error);
         setMessage("Error al actualizar contraseña: " + error.message);
         return;
       }
 
-      setMessage("Contraseña actualizada con éxito. Redirigiendo al login...");
-      // Redirige al login o donde quieras
-      setTimeout(() => router.push("/login"), 1400);
+      setMessage("Contraseña actualizada con éxito. Redirigiendo...");
+      setTimeout(() => router.push("/login"), 1500);
     } catch (err: any) {
       setLoading(false);
       setMessage("Error inesperado: " + String(err.message ?? err));
