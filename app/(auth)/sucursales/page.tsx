@@ -215,8 +215,8 @@ const SucursalesList = () => {
           <thead className="bg-gray-900 text-white">
             <tr>
               <th className="p-3 text-left w-12"></th>
-              <th className="p-3 text-center whitespace-nowrap">Nombre de la sucursal</th>
               <th className="p-3 text-center whitespace-nowrap">Plantel</th>
+              <th className="p-3 text-center whitespace-nowrap">Nombre de la sucursal</th>
               <th className="p-3 text-center whitespace-nowrap">Acciones</th>
             </tr>
           </thead>
@@ -237,10 +237,10 @@ const SucursalesList = () => {
                       onChange={() => handleSeleccionar(s.id)}
                     />
                   </td>
-                  <td className="p-3 text-center whitespace-nowrap">{s.nombre}</td>
                   <td className="p-3 text-center whitespace-nowrap">
                     {s.plantel_nombre ?? '—'}
                   </td>
+                  <td className="p-3 text-center whitespace-nowrap">{s.nombre}</td>
                   <td className="p-3 text-center">
                     <div className="flex justify-center gap-2">
                       <Button

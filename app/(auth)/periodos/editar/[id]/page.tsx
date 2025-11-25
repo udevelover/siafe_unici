@@ -156,7 +156,7 @@ const EditarPeriodoPago: React.FC = () => {
   };
 
   return (
-    <div className="relative p-8 bg-white max-h-screen">
+    <div className="relative p-8 max-h-screen">
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-40">
           <ThreeDot color="#2464ec" size="large" />
