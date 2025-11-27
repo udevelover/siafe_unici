@@ -14,21 +14,40 @@ export default function ResetPasswordPage() {
   const [tokenValidated, setTokenValidated] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Procesar el token del hash
   useEffect(() => {
     async function processRecovery() {
-      const url = window.location.href;
-
-      // Extraemos access_token del hash para detectar errores rápido
       const hash = window.location.hash;
+
+      console.log("HASH:", hash);
+
       if (!hash.includes("access_token")) {
         setError("Token inválido o ausente.");
         return;
       }
 
-      const { data, error } = await supabase.auth.exchangeCodeForSession(url);
+    const params = new URLSearchParams(hash.replace("#", ""));
+
+    const access_token = params.get("access_token") ?? "";
+    const refresh_token = params.get("refresh_token") ?? access_token;
+    const type = params.get("type") ?? "";
+
+    console.log("ACCESS TOKEN:", access_token);
+    console.log("TYPE:", type);
+
+    // Validación explícita para evitar null
+    if (!access_token || type !== "recovery") {
+      setError("Token inválido o expirado.");
+      return;
+    }
+
+      // 👉 Aquí se crea la sesión temporal (IMPORTANTE)
+      const { data, error } = await supabase.auth.setSession({
+        access_token,
+        refresh_token,
+      });
 
       if (error) {
+        console.error(error);
         setError("Error al validar token.");
         return;
       }
@@ -76,7 +95,6 @@ export default function ResetPasswordPage() {
 
       setLoading(false);
 
-      // Contraseña cambiada correctamente
       alert("Contraseña actualizada con éxito.");
       router.push("/login");
     } catch (err: any) {
