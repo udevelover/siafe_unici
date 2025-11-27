@@ -89,7 +89,7 @@ const UserManagementView: React.FC = () => {
     setMensajeReset(null);
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: "https://siafe.herramientasunici.com/reset-password",
+      redirectTo: "https://siafe.herramientasunici.com/reset-password/",
     });
 
     if (error) {
