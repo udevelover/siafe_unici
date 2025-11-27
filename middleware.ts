@@ -1,49 +1,54 @@
-import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs"
-import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
+import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
-  const supabase = createMiddlewareClient({ req, res })
+  const res = NextResponse.next();
+  const supabase = createMiddlewareClient({ req, res });
 
-  // Obtener la sesión actual
+  // Necesario para permitir que Supabase valide tokens del hash (#access_token)
+  await supabase.auth.getSession();
+
   const {
     data: { session },
-  } = await supabase.auth.getSession()
+  } = await supabase.auth.getSession();
 
   // Rutas públicas que no requieren autenticación
-  const publicRoutes = ["/", "/login", "/api", "/_next"]
+  const publicRoutes = [
+    "/",
+    "/login",
+    "/reset-password",   // ⬅⬅ NECESARIO PARA RECOVERY
+    "/api",
+    "/_next"
+  ];
 
-  // Asegurémonos de que el middleware permita el acceso a la ruta de directorio
+  const path = req.nextUrl.pathname;
 
-  // Verificar si la ruta actual es pública
+  // Verificar si la ruta es pública
   const isPublicRoute = publicRoutes.some(
-    (route) => req.nextUrl.pathname === route || req.nextUrl.pathname.startsWith(route),
-  )
+    (route) => path === route || path.startsWith(route)
+  );
 
   // Verificar si es un archivo estático
-  const isStaticFile = req.nextUrl.pathname.includes(".")
+  const isStaticFile = path.includes(".");
 
-  // Si el usuario no está autenticado y está intentando acceder a una ruta protegida
+  // Si no hay sesión y la ruta no es pública → redirigir a login
   if (!session && !isPublicRoute && !isStaticFile) {
-    //console.log(`[Middleware] Redirigiendo a login desde: ${req.nextUrl.pathname}`)
-    const redirectUrl = req.nextUrl.clone()
-    redirectUrl.pathname = "/"
-    return NextResponse.redirect(redirectUrl)
+    const redirectUrl = req.nextUrl.clone();
+    redirectUrl.pathname = "/";
+    return NextResponse.redirect(redirectUrl);
   }
 
-  // Si el usuario está autenticado y está intentando acceder a la página de login
-  if (session && req.nextUrl.pathname === "/") {
-    //console.log("[Middleware] Usuario autenticado redirigiendo a dashboard")
-    const redirectUrl = req.nextUrl.clone()
-    redirectUrl.pathname = "/dashboard"
-    return NextResponse.redirect(redirectUrl)
+  // Si hay sesión y se intenta entrar al login o home → redirigir a dashboard
+  if (session && path === "/") {
+    const redirectUrl = req.nextUrl.clone();
+    redirectUrl.pathname = "/dashboard";
+    return NextResponse.redirect(redirectUrl);
   }
 
-  return res
+  return res;
 }
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image).*)"],
-}
-
+};

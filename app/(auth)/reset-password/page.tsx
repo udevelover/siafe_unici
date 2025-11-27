@@ -5,54 +5,61 @@ import { useEffect, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 export default function ResetPasswordPage() {
-  const supabase = createClientComponentClient();
   const router = useRouter();
+  const supabase = createClientComponentClient();
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [tokenReady, setTokenReady] = useState(false);
+  const [tokenValidated, setTokenValidated] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Procesar el token del hash
   useEffect(() => {
-    async function processToken() {
+    async function processRecovery() {
       const url = window.location.href;
 
-      // Intercambia el token del hash (#access_token) por una sesión válida
+      // Extraemos access_token del hash para detectar errores rápido
+      const hash = window.location.hash;
+      if (!hash.includes("access_token")) {
+        setError("Token inválido o ausente.");
+        return;
+      }
+
       const { data, error } = await supabase.auth.exchangeCodeForSession(url);
 
       if (error) {
-        setMessage("Error al validar token.");
+        setError("Error al validar token.");
         return;
       }
 
-      if (!data.session) {
-        setMessage("No se pudo iniciar sesión temporalmente.");
+      if (!data?.session) {
+        setError("No se pudo iniciar sesión temporal.");
         return;
       }
 
-      setTokenReady(true);
+      setTokenValidated(true);
     }
 
-    processToken();
+    processRecovery();
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setMessage(null);
+    setError(null);
 
-    if (!tokenReady) {
-      setMessage("El token no está listo o no es válido.");
+    if (!tokenValidated) {
+      setError("No se puede actualizar porque el token no es válido.");
       return;
     }
 
-    if (!password || password.length < 6) {
-      setMessage("La contraseña debe tener al menos 6 caracteres.");
+    if (password.length < 6) {
+      setError("La contraseña debe tener al menos 6 caracteres.");
       return;
     }
 
     if (password !== confirm) {
-      setMessage("Las contraseñas no coinciden.");
+      setError("Las contraseñas no coinciden.");
       return;
     }
 
@@ -61,18 +68,20 @@ export default function ResetPasswordPage() {
 
       const { error } = await supabase.auth.updateUser({ password });
 
-      setLoading(false);
-
       if (error) {
-        setMessage("Error al actualizar contraseña: " + error.message);
+        setLoading(false);
+        setError("Error al actualizar contraseña: " + error.message);
         return;
       }
 
-      setMessage("Contraseña actualizada con éxito. Redirigiendo...");
-      setTimeout(() => router.push("/login"), 1500);
+      setLoading(false);
+
+      // Contraseña cambiada correctamente
+      alert("Contraseña actualizada con éxito.");
+      router.push("/login");
     } catch (err: any) {
       setLoading(false);
-      setMessage("Error inesperado: " + String(err.message ?? err));
+      setError("Error inesperado: " + (err.message ?? err));
     }
   }
 
@@ -82,17 +91,11 @@ export default function ResetPasswordPage() {
         onSubmit={handleSubmit}
         className="w-full max-w-md p-6 border rounded shadow"
       >
-        <h2 className="text-xl font-semibold mb-4">
-          Restablecer contraseña
-        </h2>
+        <h2 className="text-xl font-semibold mb-4">Restablecer contraseña</h2>
 
-        {message && (
-          <div className="mb-3 text-sm text-red-600">
-            {message}
-          </div>
-        )}
+        {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
 
-        {!tokenReady ? (
+        {!tokenValidated ? (
           <p className="text-gray-700">Validando token...</p>
         ) : (
           <>
