@@ -15,17 +15,36 @@ const EditarCuenta: React.FC = () => {
   const [banco, setBanco] = useState("");
   const [numeroCuenta, setNumeroCuenta] = useState("");
   const [razonSocial, setRazonSocial] = useState("");
+  const [plantelId, setPlantelId] = useState("");
+  const [planteles, setPlanteles] = useState<{ id: string; nombre_plantel: string }[]>([]);
+
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+
+  useEffect(() => {
+    const fetchPlanteles = async () => {
+      const { data, error } = await supabase
+        .from("plantel")
+        .select("id, nombre_plantel")
+        .order("nombre_plantel", { ascending: true });
+
+      if (!error && data) {
+        setPlanteles(data);
+      }
+    };
+
+    fetchPlanteles();
+  }, [supabase]);
 
   useEffect(() => {
     if (!cuentaId) return;
 
     const fetchCuenta = async () => {
       setLoading(true);
+
       const { data, error } = await supabase
         .from("cuenta_banco")
-        .select("banco, numero_cuenta, razon_social")
+        .select("banco, numero_cuenta, razon_social, plantel_id")
         .eq("id", cuentaId)
         .single();
 
@@ -38,16 +57,19 @@ const EditarCuenta: React.FC = () => {
         return;
       }
 
-      setBanco(data.banco);
-      setNumeroCuenta(data.numero_cuenta);
-      setRazonSocial(data.razon_social);
+      if (data) {
+        setBanco(data.banco);
+        setNumeroCuenta(data.numero_cuenta);
+        setRazonSocial(data.razon_social);
+        setPlantelId(data.plantel_id ?? "");
+      }
     };
 
     fetchCuenta();
   }, [cuentaId, supabase, router]);
 
   const handleGuardar = async () => {
-    if (!banco.trim() || !numeroCuenta.trim() || !razonSocial.trim()) {
+    if (!banco.trim() || !numeroCuenta.trim() || !razonSocial.trim() || !plantelId) {
       alert("Todos los campos son obligatorios.");
       return;
     }
@@ -60,6 +82,7 @@ const EditarCuenta: React.FC = () => {
         banco,
         numero_cuenta: numeroCuenta,
         razon_social: razonSocial,
+        plantel_id: plantelId,
         updated_at: new Date(),
       })
       .eq("id", cuentaId);
@@ -106,6 +129,21 @@ const EditarCuenta: React.FC = () => {
         </div>
 
         <div className="p-4">
+          <label className="block mb-2 font-medium">Plantel:</label>
+          <select
+            value={plantelId}
+            onChange={(e) => setPlantelId(e.target.value)}
+            className="w-full p-2 border rounded mb-4"
+            disabled={loading}
+          >
+            <option value="">Seleccione un plantel</option>
+            {planteles.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.nombre_plantel}
+              </option>
+            ))}
+          </select>
+
           <label className="block mb-2 font-medium">Banco:</label>
           <input
             type="text"
@@ -141,6 +179,7 @@ const EditarCuenta: React.FC = () => {
             >
               Cancelar
             </button>
+
             <button
               onClick={handleGuardar}
               className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"

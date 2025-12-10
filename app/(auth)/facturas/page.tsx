@@ -263,7 +263,7 @@ const FacturaList = () => {
             <tr>
               <th className="p-3"></th>
               <th className="p-3 text-center text-nowrap">Folio</th>
-              <th className="p-3 text-center text-nowrap">Plantel</th>
+              <th className="p-3 text-center text-nowrap">Plantel asociado</th>
               <th className="p-3 text-center text-nowrap">Nombre del docente</th>
               <th className="p-3 text-center text-nowrap">Oferta educativa</th>
               <th className="p-3 text-center text-nowrap">Módulo correspondiente</th>

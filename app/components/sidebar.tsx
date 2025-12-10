@@ -127,7 +127,7 @@ export function Sidebar() {
                         }`}
                       >
                         <LandPlot size={20} />
-                        <span>Áreas administrativas</span>
+                        <span>Áreas UNICI</span>
                       </Link>
                     </li>
                     <li>
@@ -181,7 +181,7 @@ export function Sidebar() {
                         }`}
                       >
                         <FileDigit size={20} />
-                        <span>Facturas de egresos</span>
+                        <span>Facturas & listado</span>
                       </Link>
                     </li>
 
@@ -195,7 +195,7 @@ export function Sidebar() {
                         }`}
                       >
                         <FileBadge size={20} />
-                        <span>Reporte de proveedores</span>
+                        <span>Reportes & filtrado</span>
                       </Link>
                     </li>
                   </ul>

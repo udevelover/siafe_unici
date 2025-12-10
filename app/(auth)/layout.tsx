@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 const inter = Inter({ subsets: ['latin'] });
 
 function ProtectedContent({ children }: { children: React.ReactNode }) {
-  const { user, isLoading, rol } = useAuth();
+  const { user, isLoading} = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function AuthLayout({
       <ProtectedContent>
         <div className="flex h-screen overflow-hidden">
           <Sidebar />
-          <main className="flex-1 ml-0 md:ml-64 overflow-y-auto bg-gray-50 p-4">
+          <main className="flex-1 ml-0 md:ml-64 bg-gray-50 p-4 overflow-y-auto overflow-hidden">
             {children}
           </main>
         </div>

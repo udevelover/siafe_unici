@@ -6,10 +6,8 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
-
 const RegistroFactura: React.FC = () => {
   const supabase = createClientComponentClient();
-
   const router = useRouter();
 
   const [folio, setFolio] = useState('');
@@ -46,14 +44,15 @@ const RegistroFactura: React.FC = () => {
 
   useEffect(() => {
     const cargarDatosIniciales = async () => {
-      const { data, error } = await supabase.from('plantel').select('id, nombre_plantel');
-      if (!error) setPlanteles(data || []);
+      const { data } = await supabase.from('plantel').select('id, nombre_plantel');
+      setPlanteles(data || []);
     };
     cargarDatosIniciales();
   }, [supabase]);
 
   useEffect(() => {
     if (!plantelId) return setDocentes([]);
+
     supabase
       .from('docente_relations')
       .select(`
@@ -62,9 +61,10 @@ const RegistroFactura: React.FC = () => {
         docente:docente_id (nombre_docente)
       `)
       .eq('plantel_id', plantelId)
-      .then(({ data, error }) => {
-        if (!error && data) setDocentes(data);
+      .then(({ data }) => {
+        if (data) setDocentes(data);
       });
+
     setDocenteId('');
   }, [plantelId, supabase]);
 
@@ -74,13 +74,15 @@ const RegistroFactura: React.FC = () => {
       setBancoId('');
       return;
     }
+
     supabase
       .from('cuenta_banco')
       .select('id, banco')
       .eq('plantel_id', plantelId)
-      .then(({ data, error }) => {
-        if (!error && data) setBancos(data);
+      .then(({ data }) => {
+        if (data) setBancos(data);
       });
+
     setBancoId('');
   }, [plantelId, supabase]);
 
@@ -90,13 +92,15 @@ const RegistroFactura: React.FC = () => {
       setConceptoId('');
       return;
     }
+
     supabase
       .from('concepto_pago')
       .select('id, descripcion')
       .eq('plantel_id', plantelId)
-      .then(({ data, error }) => {
-        if (!error && data) setConceptos(data);
+      .then(({ data }) => {
+        if (data) setConceptos(data);
       });
+
     setConceptoId('');
   }, [plantelId, supabase]);
 
@@ -123,7 +127,7 @@ const RegistroFactura: React.FC = () => {
         .eq('docente_id', docenteId);
 
       if (error) {
-        console.error('Error al obtener relaciones del docente:', error);
+        console.error('Error:', error);
       } else if (!data || data.length === 0) {
         alert('No se encontraron relaciones para el docente en este plantel.');
         setRelaciones([]);
@@ -149,8 +153,10 @@ const RegistroFactura: React.FC = () => {
 
   const handleGuardar = async () => {
     if (
-      !folio || !fechaPago || !mesPago || !importePago || !formaPago || !plantelId ||
-      !docenteId || (formaPago === 'TRANSFERENCIA' && !bancoId) || !conceptoId || !relacionId ||
+      !folio || !fechaPago || !mesPago || !importePago || !formaPago ||
+      !plantelId || !docenteId ||
+      (formaPago === 'TRANSFERENCIA' && !bancoId) ||
+      !conceptoId || !relacionId ||
       !archivos.facturaFile || !archivos.xmlFile || !archivos.comprobantePagoFile
     ) {
       alert('Por favor, complete todos los campos.');
@@ -176,7 +182,6 @@ const RegistroFactura: React.FC = () => {
         .single();
 
       if (facturaError) {
-        console.error('Error al registrar la factura:', facturaError);
         alert('Error al registrar la factura: ' + facturaError.message);
         return;
       }
@@ -209,7 +214,6 @@ const RegistroFactura: React.FC = () => {
             .upload(ruta, archivo.file, { upsert: true });
 
           if (uploadError) {
-            console.error(`Error al subir archivo ${archivo.tipo}:`, uploadError.message);
             alert(`Error al subir archivo ${archivo.tipo}: ` + uploadError.message);
             return;
           }
@@ -225,37 +229,21 @@ const RegistroFactura: React.FC = () => {
           }]);
 
         if (insertArchivoError) {
-          console.error(`Error al registrar archivo ${archivo.tipo}:`, insertArchivoError.message);
           alert(`Error al registrar archivo ${archivo.tipo}: ` + insertArchivoError.message);
           return;
         }
       }
 
       alert('Factura registrada con éxito.');
-      handleCancelar();
+      router.push('/facturas');
 
     } catch (e: any) {
-      console.error('Error inesperado:', e.message);
       alert('Error inesperado: ' + e.message);
     }
   };
 
   const handleCancelar = () => {
-    setFolio('');
-    setFechaPago('');
-    setMesPago('');
-    setImportePago('');
-    setFormaPago('');
-    setPlantelId('');
-    setDocenteId('');
-    setBancoId('');
-    setConceptoId('');
-    setRelacionId('');
-    setArchivos({
-      facturaFile: null,
-      xmlFile: null,
-      comprobantePagoFile: null,
-    });
+    router.push('/facturas');
   };
 
   const docentesUnicos = Array.from(
@@ -263,7 +251,6 @@ const RegistroFactura: React.FC = () => {
   );
 
   return (
-    
     <div className="p-8 bg-gray-50 max-h-screen">
       <div className="flex items-center mb-6">
         <Button
@@ -284,6 +271,7 @@ const RegistroFactura: React.FC = () => {
           Datos de la factura
         </div>
         <div className="px-6 py-6">
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Folio:</label>
@@ -305,9 +293,7 @@ const RegistroFactura: React.FC = () => {
               >
                 <option value="">Seleccione una opción</option>
                 {planteles.map(opt => (
-                  <option key={opt.id} value={opt.id}>
-                    {opt.nombre_plantel}
-                  </option>
+                  <option key={opt.id} value={opt.id}>{opt.nombre_plantel}</option>
                 ))}
               </select>
             </div>
@@ -399,9 +385,7 @@ const RegistroFactura: React.FC = () => {
                 >
                   <option value="">Seleccione una opción</option>
                   {bancos.map(opt => (
-                    <option key={opt.id} value={opt.id}>
-                      {opt.banco}
-                    </option>
+                    <option key={opt.id} value={opt.id}>{opt.banco}</option>
                   ))}
                 </select>
               </div>
@@ -416,9 +400,7 @@ const RegistroFactura: React.FC = () => {
               >
                 <option value="">Seleccione una opción</option>
                 {conceptos.map(opt => (
-                  <option key={opt.id} value={opt.id}>
-                    {opt.descripcion}
-                  </option>
+                  <option key={opt.id} value={opt.id}>{opt.descripcion}</option>
                 ))}
               </select>
             </div>
@@ -440,20 +422,22 @@ const RegistroFactura: React.FC = () => {
             ))}
           </div>
 
-          <div className="flex justify-end space-x-2 pt-6">
+          <div className="flex justify-end space-x-3 pt-8">
             <button
               onClick={handleCancelar}
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
             >
               Cancelar
             </button>
+
             <button
               onClick={handleGuardar}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
             >
               Guardar
             </button>
           </div>
+
         </div>
       </div>
     </div>

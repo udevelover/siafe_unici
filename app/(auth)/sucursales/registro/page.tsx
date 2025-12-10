@@ -8,7 +8,8 @@ import { ThreeDot } from "react-loading-indicators";
 type Plantel = { id: string; nombre_plantel: string };
 
 const RegistroSucursal: React.FC = () => {
-  const supabase = createClientComponentClient();
+  const [supabase] = useState(() => createClientComponentClient());
+
   const router = useRouter();
 
   const [planteles, setPlanteles] = useState<Plantel[]>([]);
@@ -31,6 +32,7 @@ const RegistroSucursal: React.FC = () => {
       }
       setPlanteles(data || []);
     };
+
     cargarPlanteles();
   }, [supabase]);
 
@@ -78,8 +80,7 @@ const RegistroSucursal: React.FC = () => {
       )}
 
       <h2 className="text-2xl font-semibold mb-6">
-        <span className="font-bold text-black">Sucursales</span> | Registro de
-        sucursales
+        <span className="font-bold text-black">Sucursales</span> | Registro de sucursales
       </h2>
 
       <div className="border rounded shadow bg-white">

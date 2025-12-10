@@ -1,12 +1,14 @@
-// next.config.js
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-
   images: {
-    unoptimized: true, // necesario para export estático
+    unoptimized: true, 
   },
 
-  webpack: (config, { isServer }) => {
+  experimental: {
+    turbo: false,
+  },
+
+  webpack: (config) => {
     config.resolve = config.resolve || {};
     config.resolve.fallback = {
       ...(config.resolve.fallback || {}),
@@ -23,4 +25,3 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
-

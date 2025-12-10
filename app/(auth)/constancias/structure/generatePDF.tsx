@@ -64,6 +64,7 @@ export async function generateCartaPDF(
   nombreDocente: string,
   supabase: SupabaseClient
 ): Promise<Blob> {
+  
   const { data: relations, error } = await supabase
     .from("docente_relations")
     .select("*")
@@ -108,9 +109,9 @@ export async function generateCartaPDF(
   doc.text("A QUIEN CORRESPONDA", margenIzquierdo, baseY);
   doc.setFontSize(12);
   doc.text("PRESENTE", margenIzquierdo, baseY + 20);
-  doc.text("Asunto: Carta de recomendación", xDerecha, baseY + 45, { align: "right" });
+  doc.text("Asunto: Carta de Recomendación", xDerecha, baseY + 45, { align: "right" });
 
-  const texto1 = "El que suscribe Directora de administración de la Universidad Internacional del Conocimiento e Investigación, S.C.";
+  const texto1 = "El que suscribe Director(a) de la Universidad Internacional del Conocimiento e Investigación, S.C.";
   const texto2 = "HACE CONSTAR";
   const texto3 = `Que el C. ${limpiarTexto(nombreDocente)} es docente de esta institución por contratación directa de servicios profesionales y ha impartido las siguientes materias:`;
 
@@ -137,9 +138,24 @@ export async function generateCartaPDF(
   autoTable(doc, {
     startY: y + 10,
     head: [["Nivel Educativo", "Módulo", "Fecha"]],
-    body: detalles.map((d) => [d.nivel, ` ${d.asignatura}`, d.fecha]),
-    styles: { fontSize: 9, cellPadding: 4, valign: "top" },
-    headStyles: { fillColor: [230, 230, 230], textColor: 0, fontStyle: "bold" },
+    body: detalles.map((d) => [d.nivel, d.asignatura, d.fecha]),
+    styles: {
+      fontSize: 9,
+      cellPadding: 4,
+      valign: "middle",
+      halign: "center"
+    },
+    headStyles: {
+      fillColor: [230, 230, 230],
+      textColor: 0,
+      fontStyle: "bold",
+      halign: "center"
+    },
+    columnStyles: {
+      0: { halign: "center" },
+      1: { halign: "center" },
+      2: { halign: "center" }
+    },
     margin: { left: margenIzquierdo, right: margenDerecho },
     tableWidth: xDerecha - margenIzquierdo,
   });

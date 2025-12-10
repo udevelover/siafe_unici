@@ -19,17 +19,22 @@ const EditarDocente: React.FC = () => {
   const [importeActual, setImporteActual] = useState('');
 
   const [plantelId, setPlantelId] = useState('');
-  const [plantelNombre, setPlantelNombre] = useState('Seleccione un plantel');
+  const [plantelNombre, setPlantelNombre] = useState('');
+
   const [nombreDocente, setNombreDocente] = useState('');
 
   const [selecciones, setSelecciones] = useState<any[]>([]);
-  const [ofertaId, setOfertaId] = useState('');
-  const [ofertaNombre, setOfertaNombre] = useState('Seleccione una oferta educativa');
-  const [asignaturaId, setAsignaturaId] = useState('');
-  const [asignaturaNombre, setAsignaturaNombre] = useState('Seleccione una asignatura');
-  const [periodoPago, setPeriodoPago] = useState('');
-  const [periodoNombre, setPeriodoNombre] = useState('Seleccione un período');
 
+  const [ofertaId, setOfertaId] = useState('');
+  const [ofertaNombre, setOfertaNombre] = useState('');
+
+  const [asignaturaId, setAsignaturaId] = useState('');
+  const [asignaturaNombre, setAsignaturaNombre] = useState('');
+
+  const [periodoPago, setPeriodoPago] = useState('');
+  const [periodoNombre, setPeriodoNombre] = useState('');
+
+  const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
     supabase.from('plantel').select('id, nombre_plantel').order('nombre_plantel')
@@ -38,22 +43,41 @@ const EditarDocente: React.FC = () => {
 
   useEffect(() => {
     if (!plantelId) return setPeriodos([]);
-    supabase.from('periodo_pago').select('id, concatenado').eq('plantel_id', plantelId).order('concatenado')
+    supabase.from('periodo_pago')
+      .select('id, concatenado')
+      .eq('plantel_id', plantelId)
+      .order('concatenado')
       .then(({ data }) => setPeriodos(data || []));
   }, [plantelId]);
 
   useEffect(() => {
     if (!plantelId) return setOfertas([]);
-    supabase.from('oferta_educativa').select('id, nombre_oferta').eq('plantel_id', plantelId).order('nombre_oferta')
+    supabase.from('oferta_educativa')
+      .select('id, nombre_oferta')
+      .eq('plantel_id', plantelId)
+      .order('nombre_oferta')
       .then(({ data }) => setOfertas(data || []));
   }, [plantelId]);
 
   useEffect(() => {
     if (!ofertaId) return setAsignaturas([]);
-    supabase.from('asignatura').select('id, nombre_asignatura').eq('oferta_educativa_id', ofertaId).order('nombre_asignatura')
+    supabase.from('asignatura')
+      .select('id, nombre_asignatura')
+      .eq('oferta_educativa_id', ofertaId)
+      .order('nombre_asignatura')
       .then(({ data }) => setAsignaturas(data || []));
   }, [ofertaId]);
 
+  useEffect(() => {
+    if (loadingData) return;
+    if (selecciones.length === 0) return;
+
+    const sel = selecciones[0];
+
+    if (sel.importe_total_pago) {
+      setImporteActual(sel.importe_total_pago.toString());
+    }
+  }, [selecciones, loadingData]);
 
   useEffect(() => {
     if (!docenteId) return;
@@ -86,26 +110,71 @@ const EditarDocente: React.FC = () => {
         .eq('docente_id', docenteId);
 
       if (relaciones && relaciones.length > 0) {
-        setPlantelId(relaciones[0].plantel_id ?? '');
-        setPlantelNombre(relaciones[0].plantel?.[0]?.nombre_plantel || 'Seleccione un plantel');
-        setSelecciones(relaciones.map((r: any) => ({
-          id: r.id,
-          plantel_id: r.plantel_id,
-          plantelNombre: r.plantel?.[0]?.nombre_plantel || '',
-          oferta_educativa_id: r.oferta_educativa_id,
-          ofertaNombre: r.oferta?.[0]?.nombre_oferta || '',
-          asignatura_id: r.asignatura_id,
-          asignaturaNombre: r.asignatura?.[0]?.nombre_asignatura || '',
-          periodo_pago_id: r.periodo_pago_id,
-          periodoNombre: r.periodo?.[0]?.concatenado || '',
-          importe_total_pago: r.importe_total_pago,
-        })));
+        const r0 = relaciones[0];
+
+        setPlantelId(r0.plantel_id);
+        setPlantelNombre(r0.plantel?.[0]?.nombre_plantel || '');
+
+        setSelecciones(
+          relaciones.map((r: any) => ({
+            id: r.id,
+            plantel_id: r.plantel_id,
+            plantelNombre: r.plantel?.nombre_plantel || '',
+            oferta_educativa_id: r.oferta_educativa_id,
+            ofertaNombre: r.oferta?.nombre_oferta || '',
+            asignatura_id: r.asignatura_id,
+            asignaturaNombre: r.asignatura?.nombre_asignatura || '',
+            periodo_pago_id: r.periodo_pago_id,
+            periodoNombre: r.periodo?.concatenado || '',
+            importe_total_pago: r.importe_total_pago,
+          }))
+        );
       }
+
+      setLoadingData(false);
     };
 
     cargarDatos();
   }, [docenteId]);
 
+  useEffect(() => {
+    if (loadingData) return;
+    if (selecciones.length === 0) return;
+
+    const sel = selecciones[0];
+
+    if (ofertas.length > 0) {
+      setOfertaId(sel.oferta_educativa_id);
+      setOfertaNombre(sel.ofertaNombre);
+    }
+
+  }, [ofertas, loadingData]);
+
+  useEffect(() => {
+    if (loadingData) return;
+    if (selecciones.length === 0) return;
+
+    const sel = selecciones[0];
+
+    if (asignaturas.length > 0) {
+      setAsignaturaId(sel.asignatura_id);
+      setAsignaturaNombre(sel.asignaturaNombre);
+    }
+
+  }, [asignaturas, loadingData]);
+
+  useEffect(() => {
+    if (loadingData) return;
+    if (selecciones.length === 0) return;
+
+    const sel = selecciones[0];
+
+    if (periodos.length > 0) {
+      setPeriodoPago(sel.periodo_pago_id);
+      setPeriodoNombre(sel.periodoNombre);
+    }
+
+  }, [periodos, loadingData]);
 
   const agregarSeleccion = () => {
     if (!ofertaId || !asignaturaId || !periodoPago) {
@@ -116,20 +185,24 @@ const EditarDocente: React.FC = () => {
       alert('Debes ingresar un importe válido.');
       return;
     }
+
     const importeParsed = parseFloat(importeActual);
     if (isNaN(importeParsed) || importeParsed <= 0) {
       alert('El importe debe ser positivo.');
       return;
     }
+
     const duplicado = selecciones.some(s =>
       s.oferta_educativa_id === ofertaId &&
       s.asignatura_id === asignaturaId &&
       s.periodo_pago_id === periodoPago
     );
+
     if (duplicado) {
       alert('Esta relación ya fue agregada.');
       return;
     }
+
     setSelecciones([
       ...selecciones,
       {
@@ -144,12 +217,13 @@ const EditarDocente: React.FC = () => {
         importe_total_pago: importeParsed
       }
     ]);
+
     setOfertaId('');
-    setOfertaNombre('Seleccione una oferta educativa');
+    setOfertaNombre('');
     setAsignaturaId('');
-    setAsignaturaNombre('Seleccione una asignatura');
+    setAsignaturaNombre('');
     setPeriodoPago('');
-    setPeriodoNombre('Seleccione un período');
+    setPeriodoNombre('');
     setImporteActual('');
   };
 
@@ -212,7 +286,7 @@ const EditarDocente: React.FC = () => {
           value={plantelId}
           onChange={e => {
             setPlantelId(e.target.value);
-            const nombre = planteles.find(p => p.id === e.target.value)?.nombre_plantel || 'Seleccione un plantel';
+            const nombre = planteles.find(p => p.id === e.target.value)?.nombre_plantel || '';
             setPlantelNombre(nombre);
           }}
         >
@@ -234,12 +308,13 @@ const EditarDocente: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+
         <select
           className="border p-2 rounded"
           value={ofertaId}
           onChange={e => {
             setOfertaId(e.target.value);
-            const nombre = ofertas.find(o => o.id === e.target.value)?.nombre_oferta || 'Seleccione una oferta educativa';
+            const nombre = ofertas.find(o => o.id === e.target.value)?.nombre_oferta || '';
             setOfertaNombre(nombre);
           }}
         >
@@ -254,7 +329,7 @@ const EditarDocente: React.FC = () => {
           value={asignaturaId}
           onChange={e => {
             setAsignaturaId(e.target.value);
-            const nombre = asignaturas.find(a => a.id === e.target.value)?.nombre_asignatura || 'Seleccione una asignatura';
+            const nombre = asignaturas.find(a => a.id === e.target.value)?.nombre_asignatura || '';
             setAsignaturaNombre(nombre);
           }}
         >
@@ -269,7 +344,7 @@ const EditarDocente: React.FC = () => {
           value={periodoPago}
           onChange={e => {
             setPeriodoPago(e.target.value);
-            const nombre = periodos.find(p => p.id === e.target.value)?.concatenado || 'Seleccione un período';
+            const nombre = periodos.find(p => p.id === e.target.value)?.concatenado || '';
             setPeriodoNombre(nombre);
           }}
         >
