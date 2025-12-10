@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    unoptimized: true, 
+    unoptimized: true,
   },
 
   experimental: {
@@ -10,9 +10,10 @@ const nextConfig = {
 
   webpack: (config) => {
     config.resolve = config.resolve || {};
+
     config.resolve.fallback = {
       ...(config.resolve.fallback || {}),
-      canvas: false,
+      canvas: false,   
       fs: false,
       path: false,
       os: false,
